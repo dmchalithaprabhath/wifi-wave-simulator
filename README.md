@@ -45,34 +45,6 @@ A web-based, interactive **2D/3D electromagnetic wave (WiFi-like) visualization*
 
 ---
 
-## Getting Started (Local)
-
-### Option A: Open with a local web server (recommended)
-ES modules typically require HTTP. Use one of these:
-
-#### Python
-python3 -m http.server 5173#### Node (http-server)
-npx http-server -p 5173Then open:
-- `http://localhost:5173/`
-
-### Option B: Direct file open (may fail)
-Some browsers block module imports from `file://`. If you see import errors, use Option A.
-
----
-
-## Hosting on GitHub Pages
-
-1. Push the project to a GitHub repository.
-2. In GitHub:
-   - **Settings → Pages**
-   - Source: **Deploy from a branch**
-   - Branch: `main`
-   - Folder: `/ (root)`
-3. Your site will be available at:
-   - `https://YOUR_USERNAME.github.io/YOUR_REPO_NAME/`
-
----
-
 ## How to Use
 
 ### Views
@@ -142,11 +114,6 @@ Use **Import** to restore a saved scene later.
 
 ## Browser Support
 Works best on modern Chromium-based browsers (Chrome/Edge) and Firefox with WebGL enabled.
-
----
-
-## License
-Add your preferred license (MIT is common for open-source). If this work is client-owned, keep the repository private or add a suitable proprietary license.
 
 ---
 
@@ -222,11 +189,6 @@ Use **Import** to restore a saved scene later.
 
 ## Browser Support
 Works best on modern Chromium-based browsers (Chrome/Edge) and Firefox with WebGL enabled.
-
----
-
-## License
-Add your preferred license (MIT is common for open-source). If this work is client-owned, keep the repository private or add a suitable proprietary license.
 
 ---
 
