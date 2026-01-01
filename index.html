@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WiFi Wave Simulator</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="toolbar">
+        <div class="toolbar-group">
+          <div
+            class="toolbar-title"
+            title="Electromagnetic (WiFi) 2D TEz FDTD visualization"
+          >
+            WiFi Wave Simulator
+          </div>
+          <button id="modeToggle" class="toggle" type="button" aria-pressed="false">
+            Mode: 2D
+          </button>
+          <button id="outputToggle" class="toggle" type="button" aria-pressed="false">
+            Output: Instant
+          </button>
+          <button id="playToggle" class="toggle" type="button" aria-pressed="true">
+            Pause
+          </button>
+          <button id="resetSim" type="button">Reset Simulation</button>
+          <label class="toolbar-field">
+            <span>Domain Size (m)</span>
+            <div class="toolbar-inline">
+              <input
+                id="domainWidthInput"
+                type="number"
+                step="1"
+                min="2"
+                value="10"
+                placeholder="W"
+                aria-label="Domain width (m)"
+              />
+              <input
+                id="domainHeightInput"
+                type="number"
+                step="1"
+                min="2"
+                value="10"
+                placeholder="H"
+                aria-label="Domain height (m)"
+              />
+            </div>
+          </label>
+          <button id="toolSelect" type="button" data-tool="select">Select</button>
+          <button id="toolRect" type="button" data-tool="draw-rectangle">Draw Rectangle</button>
+          <button id="toolCircle" type="button" data-tool="draw-circle">Draw Circle</button>
+          <div class="tool-pair">
+            <button id="toolSource" type="button" data-tool="place-source">Place Source</button>
+            <button id="sourceSettingsBtn" class="icon-button" type="button" aria-label="Signal Settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm9 3.5a7.8 7.8 0 0 0-.14-1.44l2.1-1.64-2-3.46-2.52 1a8.34 8.34 0 0 0-2.5-1.44L15.4 2h-4.8l-.54 2.99a8.34 8.34 0 0 0-2.5 1.44l-2.52-1-2 3.46 2.1 1.64A7.8 7.8 0 0 0 3 12c0 .5.05.98.14 1.44L1.04 15.1l2 3.46 2.52-1a8.34 8.34 0 0 0 2.5 1.44L10.6 22h4.8l.54-2.99a8.34 8.34 0 0 0 2.5-1.44l2.52 1 2-3.46-2.1-1.64c.09-.46.14-.94.14-1.44Z"
+                />
+              </svg>
+            </button>
+          </div>
+          <label class="toolbar-field">
+            <input
+              id="snapToShapesCheckbox"
+              type="checkbox"
+              checked
+              aria-label="Snap to shapes"
+            />
+            <span>Snap to Shapes</span>
+          </label>
+        </div>
+        <div class="toolbar-group">
+          <button id="exportBtn" type="button">Export</button>
+          <button id="importBtn" type="button">Import</button>
+          <input
+            id="importInput"
+            type="file"
+            accept="application/json"
+            aria-label="Import JSON"
+            hidden
+          />
+        </div>
+      </header>
+      <main class="viewport-wrap">
+        <aside class="object-sidebar">
+          <div class="object-panel object-panel--lists">
+            <div class="object-section">
+              <div class="object-section-title">Sources</div>
+              <div id="sourceList" class="object-list"></div>
+            </div>
+            <div class="object-section">
+              <div class="object-section-title">Shapes</div>
+              <div id="shapeList" class="object-list"></div>
+            </div>
+          </div>
+          <div class="object-panel object-panel--props">
+            <div class="object-section">
+              <div class="object-section-title">Properties</div>
+              <div id="propertiesPane" class="object-properties"></div>
+            </div>
+          </div>
+        </aside>
+        <div id="viewport" class="viewport">
+          <canvas id="viewportCanvas2d" class="viewport-canvas viewport-canvas-2d"></canvas>
+          <canvas id="viewportCanvas3d" class="viewport-canvas viewport-canvas-3d"></canvas>
+          <div class="viewport-placeholder viewport-overlay" id="viewportStatus">
+            Viewport (placeholder)
+          </div>
+        </div>
+      </main>
+    </div>
+    <div id="modalBackdrop" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalName">
+        <header class="modal-header">
+          <input
+            id="modalName"
+            class="modal-title-input"
+            type="text"
+            aria-label="Shape name"
+            value="Rectangle 1"
+          />
+          <p id="modalShapeSummary" class="modal-summary">Shape</p>
+        </header>
+        <form id="modalForm" class="modal-form">
+          <div class="modal-grid">
+            <label class="modal-field" id="modalLengthField">
+              <span>Length</span>
+              <input
+                id="modalLength"
+                type="number"
+                step="any"
+                value="1"
+                title="Rectangle length in world units (meters)."
+              />
+            </label>
+            <label class="modal-field" id="modalWidthField">
+              <span>Width</span>
+              <input
+                id="modalWidth"
+                type="number"
+                step="any"
+                value="1"
+                title="Rectangle width in world units (meters)."
+              />
+            </label>
+            <label class="modal-field" id="modalRadiusField">
+              <span>Radius</span>
+              <input
+                id="modalRadius"
+                type="number"
+                step="any"
+                value="1"
+                title="Circle radius in world units (meters)."
+              />
+            </label>
+            <label class="modal-field" id="modalHeightField">
+              <span>Height (Z)</span>
+              <input
+                id="modalHeight"
+                type="number"
+                step="0.1"
+                value="1"
+                title="3D visualization height (does not change 2D physics)."
+              />
+            </label>
+            <label class="modal-field" id="modalAnglesField">
+              <span>Rotation Z (deg)</span>
+              <input
+                id="modalAngleZ"
+                type="number"
+                step="1"
+                value="0"
+                title="In-plane rotation around Z. Used for 2D rotation."
+              />
+            </label>
+            <div class="modal-field" id="modalMaterialField">
+              <span>Material</span>
+              <select
+                id="modalMaterialPreset"
+                aria-label="Material preset"
+                title="Material preset (used by EM model). Custom lets you enter εr and σ."
+              >
+                <option value="air" title="Air: εr=1, σ=0">Air</option>
+                <option value="drywall" title="Drywall: εr≈2.7, low σ">Drywall</option>
+                <option value="concrete" title="Concrete: εr≈6, higher σ">Concrete</option>
+                <option value="metal" title="Metal: highly conductive (PEC-like)">Metal</option>
+                <option value="custom" title="Custom: enter εr and σ">Custom…</option>
+              </select>
+              <div class="modal-inline" id="modalMaterialCustomRow" hidden>
+                <input
+                  id="modalMaterialEpsR"
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  value="2.7"
+                  placeholder="εr"
+                  title="Relative permittivity (dimensionless)"
+                />
+                <input
+                  id="modalMaterialSigma"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value="0.02"
+                  placeholder="σ"
+                  title="Conductivity (normalized units in this solver)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <p id="modalError" class="modal-error" hidden></p>
+          <div class="modal-actions">
+            <button id="modalCancel" type="button">Cancel</button>
+            <button id="modalApply" type="submit">Apply</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="signalModalBackdrop" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="signalModalTitle">
+        <header class="modal-header">
+          <h2 id="signalModalTitle">Signal Settings</h2>
+          <p class="modal-summary">Defaults for new sources</p>
+        </header>
+        <form id="signalModalForm" class="modal-form">
+          <div class="modal-grid">
+            <label class="modal-field">
+              <span>Frequency</span>
+              <input id="signalFrequency" type="number" step="0.1" value="1.5" />
+            </label>
+            <label class="modal-field">
+              <span>Amplitude</span>
+              <input id="signalAmplitude" type="number" step="0.1" value="1" />
+            </label>
+            <label class="modal-field">
+              <span>Phase</span>
+              <input id="signalPhase" type="number" step="0.1" value="0" />
+            </label>
+            <label class="modal-field">
+              <span>Waveform</span>
+              <select id="signalWaveform">
+                <option value="cw" title="Continuous wave (single frequency)">Continuous (CW)</option>
+                <option value="gaussian" title="Gaussian envelope × sine carrier for time-of-flight">Gaussian pulse</option>
+                <option value="ricker" title="Ricker (Mexican hat) wavelet for time-of-flight">Ricker wavelet</option>
+              </select>
+            </label>
+            <label class="modal-field" id="signalPulseWidthField">
+              <span>Pulse width (s)</span>
+              <input
+                id="signalPulseWidth"
+                type="number"
+                step="0.01"
+                value="0.4"
+                title="Pulse duration (seconds). Used for Gaussian/Ricker; ignored for CW."
+              />
+            </label>
+            <label class="modal-field" id="signalPulseDelayField">
+              <span>Pulse delay (s)</span>
+              <input
+                id="signalPulseDelay"
+                type="number"
+                step="0.01"
+                value="0"
+                title="Pulse time offset (seconds). Used for Gaussian/Ricker; ignored for CW."
+              />
+            </label>
+            <label class="modal-field">
+              <span>Injection</span>
+              <select id="signalInjection" title="Soft adds to field; Hard overwrites field at the source cell.">
+                <option value="soft" title="Soft source: add signal to the field (stable, common).">Soft</option>
+                <option value="hard" title="Hard source: set field value at source cell (stronger, can reflect).">Hard</option>
+              </select>
+            </label>
+            <label class="modal-field">
+              <span>Excite field</span>
+              <select id="signalExcite">
+                <option value="hz" title="Magnetic field out of plane (TEz)">Hz</option>
+                <option value="ex" title="Electric field along +X">Ex</option>
+                <option value="ey" title="Electric field along +Y">Ey</option>
+                <option value="e" title="Electric field rotated by an angle in the XY plane">E (rotated)</option>
+              </select>
+            </label>
+            <label class="modal-field" id="signalPolarizationAngleField">
+              <span>Pol angle (deg)</span>
+              <input
+                id="signalPolarizationAngle"
+                type="number"
+                step="1"
+                value="0"
+                title="Polarization angle for E (rotated). Ignored unless Excite field is E (rotated)."
+              />
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button id="signalCancel" type="button">Cancel</button>
+            <button
+              id="signalApplyAll"
+              type="button"
+              title="Apply these settings to all existing sources (does not change their positions/names)."
+            >
+              Apply to Existing
+            </button>
+            <button id="signalApply" type="submit">Apply</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
